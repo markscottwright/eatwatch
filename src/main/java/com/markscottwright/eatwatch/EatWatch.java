@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -63,14 +62,14 @@ public class EatWatch extends JFrame {
 
 	public EatWatch() {
 		loadHistory();
-		var goal = new TimeSeries("Goal");
+		TimeSeries goal = new TimeSeries("Goal");
 		weightHistory.get(0).addTo(goal);
 		goalWeight.addTo(goal);
 
-		var weight = new TimeSeries("Measured Weight");
+		TimeSeries weight = new TimeSeries("Measured Weight");
 		weightHistory.forEach(w -> w.addTo(weight));
 
-		var smoothedWeight = new TimeSeries("Smoothed Weight");
+		TimeSeries smoothedWeight = new TimeSeries("Smoothed Weight");
 		runningAveragesOf(weightHistory).forEach(w -> w.addTo(smoothedWeight));
 
 		TimeSeriesCollection datasets = new TimeSeriesCollection();
