@@ -1,18 +1,28 @@
 package com.markscottwright.eatwatch;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Paint;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.Border;
 
 import org.jfree.chart.ChartFactory;
@@ -26,9 +36,6 @@ import org.jfree.data.time.TimeSeriesCollection;
 
 @SuppressWarnings("serial")
 public class EatWatch extends JFrame {
-
-	List<WeightAt> weightHistory = new ArrayList<>();
-	WeightAt goalWeight = new WeightAt(2021, 10, 1, 175.0);
 
 	static class WeightAt {
 		public WeightAt(int year, int month, int day, double weight) {
@@ -59,9 +66,31 @@ public class EatWatch extends JFrame {
 	static final Color MEASURED_WEIGHT_COLOR = Color.RED;
 	static final Color GOAL_COLOR = Color.LIGHT_GRAY;
 	static final Color SMOOTHED_WEIGHT_COLOR = Color.BLUE;
+	private ChartPanel chartPanel;
 
 	public EatWatch() {
-		loadHistory();
+		chartPanel = createChartPanel();
+		add(chartPanel, BorderLayout.CENTER);
+		JButton reloadButton = new JButton("reload");
+		add(reloadButton, BorderLayout.SOUTH);
+		reloadButton.addActionListener(a -> reload());
+
+		setIcon();
+	}
+
+	private void reload() {
+		ChartPanel newChartPane = createChartPanel();
+		remove(chartPanel);
+		add(newChartPane);
+		chartPanel = newChartPane;
+		revalidate();
+	}
+
+	private ChartPanel createChartPanel() {
+		List<WeightAt> weightHistory = new ArrayList<>();
+		WeightAt goalWeight = new WeightAt(2021, 10, 1, 175.0);
+
+		loadHistory(weightHistory, goalWeight);
 		TimeSeries goal = new TimeSeries("Goal");
 		weightHistory.get(0).addTo(goal);
 		goalWeight.addTo(goal);
@@ -117,31 +146,42 @@ public class EatWatch extends JFrame {
 		chartPanel.setBackground(Color.WHITE);
 		Border chartBorder = BorderFactory.createEmptyBorder(20, 20, 20, 20);
 		chartPanel.setBorder(chartBorder);
-		add(chartPanel);
+		return chartPanel;
 	}
 
-	private void loadHistory() {
+	private void setIcon() {
+		try (InputStream iconStream = getClass().getResourceAsStream("/icon.png")) {
+			ImageIcon icon = new ImageIcon(ImageIO.read(iconStream));
+			setIconImage(icon.getImage());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void loadHistory(List<WeightAt> weightHistory, WeightAt goalWeight) {
 		try {
 			boolean firstLine = true;
-			for (String line : Files
-					.readAllLines(Paths.get("weight.txt"))) {
+			for (String line : Files.readAllLines(Paths.get("weight.txt"))) {
 				line = line.trim();
 				if (line.startsWith("#") || line.length() == 0)
 					continue;
+				String delimiterRegex = "-|/|\\s+";
 				if (firstLine) {
 					firstLine = false;
-					String[] fields = line.split("-|\\s+");
+					String[] fields = line.split(delimiterRegex);
 					goalWeight = new WeightAt(Integer.parseInt(fields[0]), Integer.parseInt(fields[1]),
 							Integer.parseInt(fields[2]), Double.parseDouble(fields[3]));
 				} else {
-					String[] fields = line.split("-|\\s+");
+					String[] fields = line.split(delimiterRegex);
 					weightHistory.add(new WeightAt(Integer.parseInt(fields[0]), Integer.parseInt(fields[1]),
 							Integer.parseInt(fields[2]), Double.parseDouble(fields[3])));
 				}
 			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (Throwable e) {
+			StringWriter msg = new StringWriter();
+			msg.append("Error reading weight.txt:" + e + "\n");
+			e.printStackTrace(new PrintWriter(msg));
+			JOptionPane.showMessageDialog(this, msg.toString(), "Error reading weight file", JOptionPane.ERROR_MESSAGE);
 		}
 
 	}
@@ -160,7 +200,9 @@ public class EatWatch extends JFrame {
 		return averages;
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws ClassNotFoundException, InstantiationException,
+			IllegalAccessException, UnsupportedLookAndFeelException {
+		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		EatWatch eatWatch = new EatWatch();
 		eatWatch.setSize(500, 500);
 		eatWatch.setLocationRelativeTo(null);
