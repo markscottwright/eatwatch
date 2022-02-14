@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalDouble;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -88,9 +89,9 @@ public class EatWatch extends JFrame {
 
 	private ChartPanel createChartPanel() {
 		List<WeightAt> weightHistory = new ArrayList<>();
-		WeightAt goalWeight = new WeightAt(2021, 10, 1, 175.0);
-
-		loadHistory(weightHistory, goalWeight);
+		WeightAt goalWeight = loadHistory(weightHistory);
+		
+		
 		TimeSeries goal = new TimeSeries("Goal");
 		weightHistory.get(0).addTo(goal);
 		goalWeight.addTo(goal);
@@ -109,7 +110,14 @@ public class EatWatch extends JFrame {
 		chart.getTitle().setFont(new Font("Liberation Sans", Font.PLAIN, 48));
 		chart.getPlot().setBackgroundPaint(Color.WHITE);
 		XYPlot plot = (XYPlot) chart.getPlot();
-		plot.getRangeAxis().setRange(172, 200);
+
+		// determine axis range
+		OptionalDouble maybeMaxWeight = weightHistory.stream().mapToDouble(w -> w.weight).max();
+		OptionalDouble maybeMinWeight = weightHistory.stream().mapToDouble(w -> w.weight).min();
+		int maxWeight = Integer.max((int) maybeMaxWeight.orElse(Integer.MIN_VALUE), (int) goalWeight.weight);
+		int minWeight = Integer.min((int) maybeMinWeight.orElse(Integer.MAX_VALUE), (int) goalWeight.weight);
+		plot.getRangeAxis().setRange(minWeight - 2, maxWeight + 2);
+		
 		plot.setRenderer(new XYLineAndShapeRenderer() {
 			Shape CIRCLE = new Ellipse2D.Double(5, 5, 5, 5);
 
@@ -158,7 +166,14 @@ public class EatWatch extends JFrame {
 		}
 	}
 
-	private void loadHistory(List<WeightAt> weightHistory, WeightAt goalWeight) {
+	/**
+	 * Read the weight.txt file and fill weightHistory. Returns the goalWeight value
+	 * 
+	 * @param weightHistory
+	 * @return
+	 */
+	private WeightAt loadHistory(List<WeightAt> weightHistory) {
+		WeightAt goalWeight = null;
 		try {
 			boolean firstLine = true;
 			for (String line : Files.readAllLines(Paths.get("weight.txt"))) {
@@ -183,7 +198,7 @@ public class EatWatch extends JFrame {
 			e.printStackTrace(new PrintWriter(msg));
 			JOptionPane.showMessageDialog(this, msg.toString(), "Error reading weight file", JOptionPane.ERROR_MESSAGE);
 		}
-
+		return goalWeight;
 	}
 
 	static List<WeightAt> runningAveragesOf(List<WeightAt> weights) {
