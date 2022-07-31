@@ -1,6 +1,13 @@
 package com.markscottwright.eatwatch;
 
+import static java.awt.BorderLayout.NORTH;
+import static java.awt.BorderLayout.SOUTH;
+import static java.awt.Color.WHITE;
+import static java.awt.Font.ITALIC;
+import static java.awt.Label.CENTER;
 import static java.nio.file.Files.readAllLines;
+import static java.time.temporal.ChronoUnit.DAYS;
+import static javax.swing.JOptionPane.ERROR_MESSAGE;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -14,16 +21,13 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalDouble;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -102,23 +106,23 @@ public class EatWatch extends JFrame {
         JPanel titleAndSubtitleLayout = new JPanel(new BorderLayout());
         Label title = new Label("Eat Watch");
         title.setFont(new Font("Liberation Sans", Font.PLAIN, 48));
-        title.setAlignment(Label.CENTER);
-        title.setBackground(Color.WHITE);
+        title.setAlignment(CENTER);
+        title.setBackground(WHITE);
         final String subTitleText;
         if (weightHistory.size() > 0) {
-            long daysDown = ChronoUnit.DAYS.between(weightHistory.get(0).getDate(), LocalDate.now()) + 1;
-            long daysToGo = ChronoUnit.DAYS.between(LocalDate.now(), goalWeight.getDate()) - 1;
+            long daysDown = DAYS.between(weightHistory.get(0).getDate(), LocalDate.now()) + 1;
+            long daysToGo = DAYS.between(LocalDate.now(), goalWeight.getDate()) - 1;
             subTitleText = String.format("%d day%s down, %d day%s to go (%d%%)", daysDown, daysDown == 1 ? "" : "s",
                     daysToGo, daysToGo == 1 ? "" : "s", (100) * daysDown / (daysDown + daysToGo));
         } else {
             subTitleText = "- days down, - days to go (0%%)";
         }
         Label subTitle = new Label(subTitleText);
-        subTitle.setFont(new Font("Liberation Sans", Font.ITALIC, 24));
-        subTitle.setAlignment(Label.CENTER);
-        subTitle.setBackground(Color.WHITE);
-        titleAndSubtitleLayout.add(title, BorderLayout.NORTH);
-        titleAndSubtitleLayout.add(subTitle, BorderLayout.SOUTH);
+        subTitle.setFont(new Font("Liberation Sans", ITALIC, 24));
+        subTitle.setAlignment(CENTER);
+        subTitle.setBackground(WHITE);
+        titleAndSubtitleLayout.add(title, NORTH);
+        titleAndSubtitleLayout.add(subTitle, SOUTH);
         return titleAndSubtitleLayout;
     }
 
@@ -193,7 +197,7 @@ public class EatWatch extends JFrame {
 
         });
         ChartPanel chartPanel = new ChartPanel(chart);
-        chartPanel.setBackground(Color.WHITE);
+        chartPanel.setBackground(WHITE);
         Border chartBorder = BorderFactory.createEmptyBorder(20, 20, 20, 20);
         chartPanel.setBorder(chartBorder);
         return chartPanel;
@@ -238,7 +242,7 @@ public class EatWatch extends JFrame {
             StringWriter msg = new StringWriter();
             msg.append("Error reading weight.txt:" + e + "\n");
             e.printStackTrace(new PrintWriter(msg));
-            JOptionPane.showMessageDialog(this, msg.toString(), "Error reading weight file", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, msg.toString(), "Error reading weight file", ERROR_MESSAGE);
         }
         return goalWeight;
     }
